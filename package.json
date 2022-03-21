@@ -1,0 +1,21 @@
+{
+  "name": "returnpoint",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.19.1",
+    "dotenv": "^14.3.2",
+    "express": "^4.17.2",
+    "isnullorempty": "^1.0.1",
+    "log4js": "^6.4.3",
+    "minimist": "^1.2.5",
+    "moment": "^2.29.1",
+    "moment-timezone": "^0.5.34",
+    "mongoose": "^6.1.8",
+    "mongoose-timestamp": "^0.6.0"
+  }
+}
