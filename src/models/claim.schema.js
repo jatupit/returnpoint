@@ -12,6 +12,8 @@ var claimSchema =  Schema({
     batch_code: { type: String },
     expired_at: { type: Date },
     redeemed_at: { type: Date },
+    updated_date :{type : Date},
+    created_date : {type : Date},
     sku: { type: String }, // change to reward_id
     reward_id: { type: String },
     reward_campaign_id: { type: String },

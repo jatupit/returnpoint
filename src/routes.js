@@ -7,6 +7,7 @@ app.get('/',async(request,response)=>{
     }); 
 //app.post('/returnpoint', appController.returnpoint)
 app.post('/expirepoint', appController.getexpirepoint)
+app.post('/convertpoint', appController.convertpoint)
 }
 module.exports = {
     shopRoutes};

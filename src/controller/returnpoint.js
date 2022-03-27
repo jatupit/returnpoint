@@ -31,3 +31,19 @@ module.exports.getexpirepoint = async (req, res) => {
     }
 
 }
+
+module.exports.convertpoint = async (req, res) => {
+    console.log('[start] run convert point')
+    try {
+        const shops = await ShopService.ConvertPoint()
+      //  console.log('result :', res)
+         res.send(shops)
+    }
+    catch (error) {
+        res.errorEvent(req, res, `${error.message}`)
+    }
+    finally {
+        console.log('[ END ] convert point()')
+    }
+
+}

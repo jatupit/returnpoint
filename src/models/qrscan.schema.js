@@ -40,7 +40,8 @@ var qrscanSchema =  Schema({
     latitude: { type: Number },
     longitude: { type: Number },
     status: { type: String },
-    status_stamp: { type: String }
+    status_stamp: { type: String },
+    created_date : {type : Date}
 },
 {
  timestamp : true,
