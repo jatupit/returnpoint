@@ -5,7 +5,7 @@ const shopTempModel = require("../models/shopTemp.schema")
 const qrscanModel = require("../models/qrscan.schema")
 const claimModel = require("../models/claim.schema")
 const log4js = require("log4js");
-
+const randomstring  = require("randomstring");
 
 log4js.configure({
     appenders: { cheese: { type: "file", filename: "pointexpire.log" } },
@@ -144,16 +144,18 @@ module.exports.ConvertPoint = async (req,res) => {
       
     // const shoptemp  =  await shopModel.find({ shop_type : 'CV',status : 'ACTIVE'})
      const shoptemp  =  await shopModel.find({ shop_code : "V36-000-01258"})
-     console.log(`shop : ${shoptemp}`)
+
      console.log(`shop_code : ${shoptemp.length}`)
 
      shoptemp.forEach(async data => {
-     const claimTransaction = await insertclaim(data)
+    
+    const uid  = data.users[0].line_user_id
+     const claimTransaction = await insertclaim(data,uid)
       if(!isNullOrEmpty(claimTransaction._id))
       {
         console.log("claimTransaction "+claimTransaction._id) 
-        const pointdivide10 =  Math.floor(data.point/10)    
-        await insertqrscan(data,pointdivide10) 
+        const pointdivide10 =  Math.ceil(data.point/10)    
+        await insertqrscan(data,pointdivide10,uid) 
         await updateshop(data.shop_code,pointdivide10)
         
       }
@@ -170,14 +172,11 @@ module.exports.ConvertPoint = async (req,res) => {
   }
 
 }
-var insertclaim = async (data) => {
+var insertclaim = async (data,uids) => {
   const batchTime = moment();
   const checkType = 'Q';
   const batchCode = `${checkType}${batchTime.format('x')}`;
-  const uids = null 
-  
-  //const {line_user_id}  = data.users.first()
- // console.log(line_user_id)
+
   let claimTransaction = new claimModel({
    
     line_user_id: uids || null,
@@ -204,40 +203,43 @@ var insertclaim = async (data) => {
   });
   claimTransaction = await claimTransaction.save();
   console.log("insertclaim "+claimTransaction._id)
+  logger.debug(`,Claim,${data.shop_code},${claimTransaction.point_before},${claimTransaction.point},${claimTransaction.point_after}`)
   return claimTransaction._id;
 };
 
-var insertqrscan = async (data,point) =>{
-  const lineid = null
+var insertqrscan = async (data,point,lineid) =>{
+  
   
   let lastuid = null
   let scanset = null
   let codeResults = [];
-  //let codes = { code: string, image_paths: string, sku: string, digit: string }
+  const codeScan  = randomstring.generate(13)
+  const mapCode  = randomstring.generate(9)
+
   if(!isNullOrEmpty(lineid))
   {
     lastuid = lineid.substring(lineid.length - 3, lineid.length);
     scanset = `${moment().format('x')}${lastuid}`;
   }
-  
-  
- /* codeResults = new qrscanModel.codes.map(codeObj => {
-    return new Promise(async resolve => {
-      resolve({
-        code: 'd202203281234',
-        hash: 'd202203281234',
-        result: 'success',
-        point: point,
-        stamp: 0,
-        remark :'convert point',
-        error_code: 'convert point',
-      });
-    });
-  });*/
+  console.log(moment().format('x'));
+  console.log(Math.random().toString(26))
+  var code = {
+    code: codeScan,
+    hash: codeScan,
+    result: 'success',
+    point: point,
+    stamp: 0,
+    map_code : mapCode,
+		sku : 'SDDM010465',
+    remark :'convert point',
+    original_code :codeScan,
+    error_code: 'convert point',
+  }
+  codeResults.push(code);
   
   let qrscantransaction = new qrscanModel(
     {
-      line_user_id:  null,
+      line_user_id:  data.users[0].line_user_id || null,
       shop_code: data.shop_code,
       shop_type: data.shop_type,
       sub_shop_type: null,
@@ -249,15 +251,17 @@ var insertqrscan = async (data,point) =>{
       stamp_before: 0,
       stamp: 0,
       stamp_after: 0,
-      codes:null,
-      latitude: data.latitude,
-      longitude: data.longitude,
+      codes:codeResults,
+      latitude: null,
+      longitude: null,
       created_date: moment('2022-04-01').toDate(),
+      updated_date: moment('2022-04-01').toDate(),
       scan_type: 'MANUAL'
     }
   );
   qrscantransaction = await qrscantransaction.save();
   console.log("insertqrscan "+qrscantransaction._id)
+  logger.debug(`,Qrscan,${data.shop_code},${qrscantransaction.point_before},${qrscantransaction.point},${qrscantransaction.point_after}`)
 };
 var updateshop = async (shop_code,point) =>{
   console.log(shop_code+""+point)
@@ -272,13 +276,15 @@ var updateshop = async (shop_code,point) =>{
 
       if (err) {
   
-          console.log(`update document error : ${err}`);
+          console.log(`update shop error : ${err}`);
   
       } else {
   
-          console.log(`update document succuess`);
+          console.log(`update shop succuess`);
           console.log(doc);
-  
+          const shopafter  =   shopModel.find({ shop_code : shop_code})
+          logger.debug(`,Shop,${shop_code},${doc.modifiedCount},${doc.upsertedId},${doc.matchedCount}`)
       }
    });
+   console.log(temp)
 };
