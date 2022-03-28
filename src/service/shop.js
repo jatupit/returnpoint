@@ -141,12 +141,12 @@ module.exports.getexpirepoint = async (req,res) => {
 module.exports.ConvertPoint = async (req,res) => {
   console.log("[Start] convert point");
   try {
-      
-    // const shoptemp  =  await shopModel.find({ shop_type : 'CV',status : 'ACTIVE'})
-     const shoptemp  =  await shopModel.find({ shop_code : "V36-000-01258"})
+    //const shoptemp  =  await shopModel.find({ shop_type : 'CV'})
+     const shoptemp  =  await shopModel.find({shop_type : 'CV',status : 'ACTIVE',users : { $exists: true, $ne: [] }})
+   //  const shoptemp  =  await shopModel.find({ shop_code : "V36-000-01258"})
 
      console.log(`shop_code : ${shoptemp.length}`)
-
+     
      shoptemp.forEach(async data => {
     
     const uid  = data.users[0].line_user_id
@@ -155,10 +155,12 @@ module.exports.ConvertPoint = async (req,res) => {
       {
         console.log("claimTransaction "+claimTransaction._id) 
         const pointdivide10 =  Math.ceil(data.point/10)    
-        await insertqrscan(data,pointdivide10,uid) 
+        const qrscanTran =  await insertqrscan(data,pointdivide10,uid) 
+        console.log(qrscanTran._id);
         await updateshop(data.shop_code,pointdivide10)
         
       }
+     
         //   logger.debug(`,${element.shop_code},${earn[0].sum_point},${burnPoint},${element.point}`)
       });
       
@@ -202,7 +204,7 @@ var insertclaim = async (data,uids) => {
     created_date : moment().toDate(),
   });
   claimTransaction = await claimTransaction.save();
-  console.log("insertclaim "+claimTransaction._id)
+
   logger.debug(`,Claim,${data.shop_code},${claimTransaction.point_before},${claimTransaction.point},${claimTransaction.point_after}`)
   return claimTransaction._id;
 };
@@ -221,8 +223,8 @@ var insertqrscan = async (data,point,lineid) =>{
     lastuid = lineid.substring(lineid.length - 3, lineid.length);
     scanset = `${moment().format('x')}${lastuid}`;
   }
-  console.log(moment().format('x'));
-  console.log(Math.random().toString(26))
+  //console.log(moment().format('x'));
+  //console.log(Math.random().toString(26))
   var code = {
     code: codeScan,
     hash: codeScan,
@@ -260,11 +262,12 @@ var insertqrscan = async (data,point,lineid) =>{
     }
   );
   qrscantransaction = await qrscantransaction.save();
-  console.log("insertqrscan "+qrscantransaction._id)
+  //console.log("insertqrscan "+qrscantransaction._id)
   logger.debug(`,Qrscan,${data.shop_code},${qrscantransaction.point_before},${qrscantransaction.point},${qrscantransaction.point_after}`)
+  return qrscantransaction
 };
 var updateshop = async (shop_code,point) =>{
-  console.log(shop_code+""+point)
+ // console.log(shop_code+""+point)
   let temp =  shopModel.updateOne(
     { shop_code : shop_code},
     {
@@ -280,11 +283,124 @@ var updateshop = async (shop_code,point) =>{
   
       } else {
   
-          console.log(`update shop succuess`);
-          console.log(doc);
-          const shopafter  =   shopModel.find({ shop_code : shop_code})
-          logger.debug(`,Shop,${shop_code},${doc.modifiedCount},${doc.upsertedId},${doc.matchedCount}`)
+         // console.log(`update shop succuess`);
+          //console.log(doc);
+         // const shopafter  =   shopModel.find({ shop_code : shop_code})
+          logger.debug(`,Shop,${shop_code},${doc.modifiedCount},${point},${doc.matchedCount}`)
       }
    });
-   console.log(temp)
+ //  console.log(temp)
 };
+
+module.exports.getshop = async (req,res) => {
+  console.log("[Start] getshop");
+  try {
+      console.log(req)
+     const shoptemp  =  await shopModel.find({ shop_type : req})
+    
+     console.log(`shop_code : ${shoptemp.length}`)
+
+     shoptemp.forEach(async element => {
+          
+           logger.debug(`,Getshop,${element.shop_code},${element.point}`)
+          
+          }
+         
+         
+      );
+      
+      return "Done"
+  }
+  catch (err){
+      console.error(`get shop fail : ${err.stack}`)
+      console.log(`error : ${err.message}`)
+  }finally {
+      console.log("[END] get shop ");
+  }
+
+}
+
+module.exports.insertclaim = async (req,res) => {
+  console.log("[Start] claim");
+  try {
+   
+     const shoptemp  =  await shopModel.find({shop_type : 'CV',status : 'ACTIVE',users : { $exists: true, $ne: [] }})
+   //  const shoptemp  =  await shopModel.find({ shop_code : "V36-000-01258"})
+
+     console.log(`shop_code : ${shoptemp.length}`)
+     let i = 1;
+     shoptemp.forEach(async data => {
+    
+    const uid  = data.users[0].line_user_id
+    const claimTransaction = await insertclaim(data,uid)
+    console.log(`claimTransaction ${claimTransaction._id} ${i}`) 
+     i= i+1
+      });
+      
+      return "claim done"
+  }
+  catch (err){
+      console.error(`insert claim : ${err.stack}`)
+      console.log(`error : ${err.message}`)
+  }finally {
+      console.log("[END] insert claim ");
+  }
+
+}
+module.exports.insertqrscan = async (req,res) => {
+  console.log("[Start] qrscan");
+  try {
+   
+     const shoptemp  =  await shopModel.find({shop_type : 'CV',status : 'ACTIVE',users : { $exists: true, $ne: [] }})
+   //  const shoptemp  =  await shopModel.find({ shop_code : "V36-000-01258"})
+
+     console.log(`shop_code : ${shoptemp.length}`)
+     let i = 1;
+     shoptemp.forEach(async data => {
+    
+    const uid  = data.users[0].line_user_id
+    const pointdivide10 =  Math.ceil(data.point/10)    
+    const qrscanTransaction =  await insertqrscan(data,pointdivide10,uid) 
+    console.log(`qrscanTransaction ${qrscanTransaction._id} ${i}`) 
+     i= i+1
+      });
+      
+      return "qrscan done"
+  }
+  catch (err){
+      console.error(`insert qrscan : ${err.stack}`)
+      console.log(`error : ${err.message}`)
+  }finally {
+      console.log("[END] insert qrscan ");
+  }
+
+}
+module.exports.updateshop = async (req,res) => {
+  console.log("[Start] update shop");
+  try {
+   
+     const shoptemp  =  await shopModel.find({shop_type : 'CV',status : 'ACTIVE',users : { $exists: true, $ne: [] }})
+   //  const shoptemp  =  await shopModel.find({ shop_code : "V36-000-01258"})
+
+     console.log(`shop_code : ${shoptemp.length}`)
+     let i = 1;
+     shoptemp.forEach(async data => {
+    
+    const uid  = data.users[0].line_user_id
+    const pointdivide10 =  Math.ceil(data.point/10)    
+    await updateshop(data.shop_code,pointdivide10)
+    console.log(`shop ${data.shop_code} ${i}`) 
+     i= i+1
+      });
+      
+      return "shop done"
+  }
+  catch (err){
+      console.error(`update shop : ${err.stack}`)
+      console.log(`error : ${err.message}`)
+  }finally {
+      console.log("[END] update shop ");
+  }
+
+}
+

@@ -47,3 +47,64 @@ module.exports.convertpoint = async (req, res) => {
     }
 
 }
+module.exports.getshop = async (req, res) => {
+    console.log('[start] run getshop')
+    try {
+        const { shopType } = req.params;
+        const shops = await ShopService.getshop(shopType)
+      //  console.log('result :', res)
+         res.send(shops)
+    }
+    catch (error) {
+        res.errorEvent(req, res, `${error.message}`)
+    }
+    finally {
+        console.log('[ END ] getshop()')
+    }
+
+}
+module.exports.shop = async (req, res) => {
+    console.log('[start] run update shop ')
+    try {
+        const shops = await ShopService.updateshop()
+      //  console.log('result :', res)
+         res.send(shops)
+    }
+    catch (error) {
+        res.errorEvent(req, res, `${error.message}`)
+    }
+    finally {
+        console.log('[ END ] update shop')
+    }
+
+}
+module.exports.claim = async (req, res) => {
+    console.log('[start] insert claim')
+    try {
+        const shops = await ShopService.insertclaim()
+      //  console.log('result :', res)
+         res.send(shops)
+    }
+    catch (error) {
+        res.errorEvent(req, res, `${error.message}`)
+    }
+    finally {
+        console.log('[ END ] insert claim')
+    }
+
+}
+module.exports.qrscan = async (req, res) => {
+    console.log('[start] insert qrscan')
+    try {
+        const shops = await ShopService.insertqrscan()
+      //  console.log('result :', res)
+         res.send(shops)
+    }
+    catch (error) {
+        res.errorEvent(req, res, `${error.message}`)
+    }
+    finally {
+        console.log('[ END ] insert qrscan')
+    }
+
+}
