@@ -217,7 +217,7 @@ var insertqrscan = async (data,point,lineid) =>{
   let codeResults = [];
   const codeScan  = randomstring.generate(13)
   const mapCode  = randomstring.generate(9)
-  const scanDateStr = ''
+  
   if(!isNullOrEmpty(lineid))
   {
     lastuid = lineid.substring(lineid.length - 3, lineid.length);
@@ -232,9 +232,9 @@ var insertqrscan = async (data,point,lineid) =>{
     stamp: 0,
     map_code : mapCode,
 		sku : config.sku_scan,
-    remark :'convert point',
+    remark : config.remark,
     original_code :codeScan,
-    error_code: 'convert point',
+    error_code: config.remark,
   }
   codeResults.push(code);
   
@@ -244,7 +244,7 @@ var insertqrscan = async (data,point,lineid) =>{
       shop_code: data.shop_code,
       shop_type: data.shop_type,
       sub_shop_type: null,
-      file_name: 'convert point',
+      file_name: config.remark,
       scan_set: scanset,
       point_before: 0,
       point: point,
@@ -337,9 +337,9 @@ module.exports.getclaim = async (req,res) => {
 module.exports.insertclaim = async (req,res) => {
   console.log("[Start] claim");
   try {
-    //const shoptemp  =  await shopModel.find({shop_type : 'CV', point : { $gte : 2}})
+    const shoptemp  =  await shopModel.find({shop_type : 'CV', point : { $gte : 2}})
    //  const shoptemp  =  await shopModel.find({shop_type : 'CV',status : 'ACTIVE',users : { $exists: true, $ne: [] }})
-    const shoptemp  =  await shopModel.find({ shop_code : "V36-000-01258"})
+   // const shoptemp  =  await shopModel.find({ shop_code : "V36-000-01258"})
 
      console.log(`shop_code : ${shoptemp.length}`)
      let i = 1;
@@ -393,12 +393,14 @@ module.exports.updateshop = async (req,res) => {
   try {
    
      const shoptemp  =  await shopModel.find({shop_type : 'CV', point : { $gte : 2}})
-   //  const shoptemp  =  await shopModel.find({ shop_code : "V36-000-01258"})
+    // const shoptemp  =  await shopModel.find({shop_type : 'CV'})
+    // const shoptemp  =  await shopModel.find({ shop_code : "V36-000-01258"})
 
      console.log(`shop_code : ${shoptemp.length}`)
      let i = 1;
      shoptemp.forEach(async data => {
-    const pointdivide10 =  Math.ceil(data.point/10)    
+    const pointdivide10 =  Math.ceil(data.point/10)
+     
     await updateshop(data.shop_code,pointdivide10)
     console.log(`shop ${data.shop_code} ${i}`) 
      i= i+1
