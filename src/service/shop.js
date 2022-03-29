@@ -6,7 +6,7 @@ const qrscanModel = require("../models/qrscan.schema")
 const claimModel = require("../models/claim.schema")
 const log4js = require("log4js");
 const randomstring  = require("randomstring");
-
+const config = require("../config");
 log4js.configure({
     appenders: { cheese: { type: "file", filename: "pointexpire.log" } },
     categories: { default: { appenders: ["cheese"], level: "trace" } }
@@ -178,21 +178,21 @@ var insertclaim = async (data,uids) => {
   const batchTime = moment();
   const checkType = 'Q';
   const batchCode = `${checkType}${batchTime.format('x')}`;
-
+  const expireAt = batchTime.add(30, 'minutes');
   let claimTransaction = new claimModel({
    
-    line_user_id: uids || null,
+    line_user_id: uids,
     shop_code: data.shop_code,
     shop_type: data.shop_type,
     batch_code: batchCode,
-    expired_at: null,
-    sku: 'SDDM010465',
-    reward_id: null,
-    reward_campaign_id: null,
+    expired_at: expireAt.toDate(),
+    sku: config.sku_claim,
+    reward_id: config.reward_id,
+    reward_campaign_id: config.reward_campaign_id,
     qty: 1,
     claim_multiplier: 1,
     claim_multiplier_unit:  null,
-    unit: null,
+    unit: 1,
     status: 'REDEEMED',
     type: 'Q',
     coupon:  null,
@@ -217,14 +217,13 @@ var insertqrscan = async (data,point,lineid) =>{
   let codeResults = [];
   const codeScan  = randomstring.generate(13)
   const mapCode  = randomstring.generate(9)
-
+  const scanDateStr = ''
   if(!isNullOrEmpty(lineid))
   {
     lastuid = lineid.substring(lineid.length - 3, lineid.length);
     scanset = `${moment().format('x')}${lastuid}`;
   }
-  //console.log(moment().format('x'));
-  //console.log(Math.random().toString(26))
+ 
   var code = {
     code: codeScan,
     hash: codeScan,
@@ -232,7 +231,7 @@ var insertqrscan = async (data,point,lineid) =>{
     point: point,
     stamp: 0,
     map_code : mapCode,
-		sku : 'SDDM010465',
+		sku : config.sku_scan,
     remark :'convert point',
     original_code :codeScan,
     error_code: 'convert point',
@@ -241,7 +240,7 @@ var insertqrscan = async (data,point,lineid) =>{
   
   let qrscantransaction = new qrscanModel(
     {
-      line_user_id:  data.users[0].line_user_id || null,
+      line_user_id:  lineid,
       shop_code: data.shop_code,
       shop_type: data.shop_type,
       sub_shop_type: null,
@@ -256,8 +255,8 @@ var insertqrscan = async (data,point,lineid) =>{
       codes:codeResults,
       latitude: null,
       longitude: null,
-      created_date: moment('2022-04-01').toDate(),
-      updated_date: moment('2022-04-01').toDate(),
+      created_date: moment(`2022-04-01 17:40:05+07`).toDate(),
+      updated_date: moment(`2022-04-01 17:40:05+07`).toDate(),
       scan_type: 'MANUAL'
     }
   );
@@ -273,7 +272,7 @@ var updateshop = async (shop_code,point) =>{
     {
        $set: 
          { point: parseInt(point),
-          updated_date: new Date() 
+           updated_date: new Date() 
           }
     },function (err, doc) {
 
@@ -296,17 +295,11 @@ module.exports.getshop = async (req,res) => {
   console.log("[Start] getshop");
   try {
       console.log(req)
-     const shoptemp  =  await shopModel.find({ shop_type : req})
-    
+     const shoptemp  =  await shopModel.find({ shop_type : req})  
      console.log(`shop_code : ${shoptemp.length}`)
-
      shoptemp.forEach(async element => {
-          
-           logger.debug(`,Getshop,${element.shop_code},${element.point}`)
-          
-          }
-         
-         
+           logger.debug(`,Getshop,${element.shop_code},${element.point}`)         
+          }        
       );
       
       return "Done"
@@ -319,19 +312,40 @@ module.exports.getshop = async (req,res) => {
   }
 
 }
+module.exports.getclaim = async (req,res) => {
+  console.log("[Start] get claim");
+  try {
+      console.log(req)
+     const claimtemp  =  await claimModel.find({ shop_type : req,sku : config.sku_claim})  
+     console.log(`claimtemp : ${claimtemp.length}`)
+     claimtemp.forEach(async element => {
+           logger.debug(`,Getclaim ,${element.shop_code},${element.point}`)         
+          }        
+      );
+      
+      return "Get claim done"
+  }
+  catch (err){
+      console.error(`get claim fail : ${err.stack}`)
+      console.log(`error : ${err.message}`)
+  }finally {
+      console.log("[END] get claim ");
+  }
+
+}
 
 module.exports.insertclaim = async (req,res) => {
   console.log("[Start] claim");
   try {
-   
-     const shoptemp  =  await shopModel.find({shop_type : 'CV',status : 'ACTIVE',users : { $exists: true, $ne: [] }})
-   //  const shoptemp  =  await shopModel.find({ shop_code : "V36-000-01258"})
+    //const shoptemp  =  await shopModel.find({shop_type : 'CV', point : { $gte : 2}})
+   //  const shoptemp  =  await shopModel.find({shop_type : 'CV',status : 'ACTIVE',users : { $exists: true, $ne: [] }})
+    const shoptemp  =  await shopModel.find({ shop_code : "V36-000-01258"})
 
      console.log(`shop_code : ${shoptemp.length}`)
      let i = 1;
      shoptemp.forEach(async data => {
     
-    const uid  = data.users[0].line_user_id
+    const uid  = !isNullOrEmpty(data.users[0]) ?  data.users[0].line_user_id : null
     const claimTransaction = await insertclaim(data,uid)
     console.log(`claimTransaction ${claimTransaction._id} ${i}`) 
      i= i+1
@@ -350,15 +364,14 @@ module.exports.insertclaim = async (req,res) => {
 module.exports.insertqrscan = async (req,res) => {
   console.log("[Start] qrscan");
   try {
-   
-     const shoptemp  =  await shopModel.find({shop_type : 'CV',status : 'ACTIVE',users : { $exists: true, $ne: [] }})
+    const shoptemp  =  await shopModel.find({shop_type : 'CV', point : { $gte : 2}})
+    // const shoptemp  =  await shopModel.find({shop_type : 'CV',status : 'ACTIVE',users : { $exists: true, $ne: [] }})
    //  const shoptemp  =  await shopModel.find({ shop_code : "V36-000-01258"})
 
      console.log(`shop_code : ${shoptemp.length}`)
      let i = 1;
      shoptemp.forEach(async data => {
-    
-    const uid  = data.users[0].line_user_id
+    const uid  = !isNullOrEmpty(data.users[0]) ?  data.users[0].line_user_id : null
     const pointdivide10 =  Math.ceil(data.point/10)    
     const qrscanTransaction =  await insertqrscan(data,pointdivide10,uid) 
     console.log(`qrscanTransaction ${qrscanTransaction._id} ${i}`) 
@@ -379,14 +392,12 @@ module.exports.updateshop = async (req,res) => {
   console.log("[Start] update shop");
   try {
    
-     const shoptemp  =  await shopModel.find({shop_type : 'CV',status : 'ACTIVE',users : { $exists: true, $ne: [] }})
+     const shoptemp  =  await shopModel.find({shop_type : 'CV', point : { $gte : 2}})
    //  const shoptemp  =  await shopModel.find({ shop_code : "V36-000-01258"})
 
      console.log(`shop_code : ${shoptemp.length}`)
      let i = 1;
      shoptemp.forEach(async data => {
-    
-    const uid  = data.users[0].line_user_id
     const pointdivide10 =  Math.ceil(data.point/10)    
     await updateshop(data.shop_code,pointdivide10)
     console.log(`shop ${data.shop_code} ${i}`) 
