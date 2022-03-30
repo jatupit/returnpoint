@@ -175,9 +175,11 @@ module.exports.ConvertPoint = async (req,res) => {
 
 }
 var insertclaim = async (data,uids) => {
-  const batchTime = moment();
+  const batchTime = moment()
   const checkType = 'Q';
-  const batchCode = `${checkType}${batchTime.format('x')}`;
+  const ramdomst  = randomstring.generate(3)
+  const batchCode = `${checkType}${batchTime.format('x')}${ramdomst}`;
+ // const batchCode = `${checkType}${batchTime.format('x')}`;
   const expireAt = batchTime.add(30, 'minutes');
   let claimTransaction = new claimModel({
    
@@ -255,8 +257,8 @@ var insertqrscan = async (data,point,lineid) =>{
       codes:codeResults,
       latitude: null,
       longitude: null,
-      created_date: moment(`2022-04-01 17:40:05+07`).toDate(),
-      updated_date: moment(`2022-04-01 17:40:05+07`).toDate(),
+      created_date: moment().toDate(),
+      updated_date: moment().toDate(),
       scan_type: 'MANUAL'
     }
   );
@@ -339,7 +341,7 @@ module.exports.insertclaim = async (req,res) => {
   try {
     const shoptemp  =  await shopModel.find({shop_type : 'CV', point : { $gte : 2}})
    //  const shoptemp  =  await shopModel.find({shop_type : 'CV',status : 'ACTIVE',users : { $exists: true, $ne: [] }})
-   // const shoptemp  =  await shopModel.find({ shop_code : "V36-000-01258"})
+   // const shoptemp  =  await shopModel.find({ shop_code : "V90-02858"})
 
      console.log(`shop_code : ${shoptemp.length}`)
      let i = 1;
@@ -366,7 +368,7 @@ module.exports.insertqrscan = async (req,res) => {
   try {
     const shoptemp  =  await shopModel.find({shop_type : 'CV', point : { $gte : 2}})
     // const shoptemp  =  await shopModel.find({shop_type : 'CV',status : 'ACTIVE',users : { $exists: true, $ne: [] }})
-   //  const shoptemp  =  await shopModel.find({ shop_code : "V36-000-01258"})
+    // const shoptemp  =  await shopModel.find({ shop_code : "V10140-6300760040"})
 
      console.log(`shop_code : ${shoptemp.length}`)
      let i = 1;
@@ -394,7 +396,7 @@ module.exports.updateshop = async (req,res) => {
    
      const shoptemp  =  await shopModel.find({shop_type : 'CV', point : { $gte : 2}})
     // const shoptemp  =  await shopModel.find({shop_type : 'CV'})
-    // const shoptemp  =  await shopModel.find({ shop_code : "V36-000-01258"})
+     //const shoptemp  =  await shopModel.find({ shop_code : "V10140-6300760040"})
 
      console.log(`shop_code : ${shoptemp.length}`)
      let i = 1;
@@ -413,6 +415,28 @@ module.exports.updateshop = async (req,res) => {
       console.log(`error : ${err.message}`)
   }finally {
       console.log("[END] update shop ");
+  }
+
+}
+
+module.exports.getqrscan = async (req,res) => {
+  console.log("[Start] get qrscan");
+  try {
+      console.log(req)
+     const qrscantemp  =  await qrscanModel.find({ shop_type : req,"codes.sku" : config.sku_scan})  
+     console.log(`qrscantemp : ${qrscantemp.length}`)
+     qrscantemp.forEach(async element => {
+           logger.debug(`,Getqrscan ,${element.shop_code},${element.point}`)         
+          }        
+      );
+      
+      return "Get qrscan done"
+  }
+  catch (err){
+      console.error(`get qrscan fail : ${err.stack}`)
+      console.log(`error : ${err.message}`)
+  }finally {
+      console.log("[END] get qrscan ");
   }
 
 }

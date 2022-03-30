@@ -108,3 +108,35 @@ module.exports.qrscan = async (req, res) => {
     }
 
 }
+module.exports.getclaim = async (req, res) => {
+    console.log('[start] run getclaim')
+    try {
+        const { shopType } = req.params;
+        const shops = await ShopService.getclaim(shopType)
+      //  console.log('result :', res)
+         res.send(shops)
+    }
+    catch (error) {
+        res.errorEvent(req, res, `${error.message}`)
+    }
+    finally {
+        console.log('[ END ] getclaim()')
+    }
+
+}
+module.exports.getqrscan = async (req, res) => {
+    console.log('[start] run getqrscan')
+    try {
+        const { shopType } = req.params;
+        const shops = await ShopService.getqrscan(shopType)
+      //  console.log('result :', res)
+         res.send(shops)
+    }
+    catch (error) {
+        res.errorEvent(req, res, `${error.message}`)
+    }
+    finally {
+        console.log('[ END ] getqrscan()')
+    }
+
+}
